@@ -1,20 +1,25 @@
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session as SessionORM
 
 from madr.db import get_session
 from madr.models import Conta
 from madr.schemas.contas import ContaList, ContaResponse, ContaSchema
 from madr.schemas.filters import FiltersPage
+from madr.security import get_current_conta, get_password_hash
 
 router = APIRouter(prefix='/contas', tags=['contas'])
 
+Session = Annotated[SessionORM, Depends(get_session)]
+CurrentConta = Annotated[Conta, Depends(get_current_conta)]
+
 
 @router.post('/', response_model=ContaResponse, status_code=HTTPStatus.CREATED)
-def create_conta(conta: ContaSchema, session: Session = Depends(get_session)):
+def create_conta(conta: ContaSchema, session: Session):
     db_conta = session.scalar(
         select(Conta).where(Conta.username == conta.username)
     )
@@ -25,7 +30,9 @@ def create_conta(conta: ContaSchema, session: Session = Depends(get_session)):
         )
 
     new_conta = Conta(
-        username=conta.username, email=conta.email, senha=conta.senha
+        username=conta.username,
+        email=conta.email,
+        senha=get_password_hash(conta.senha),
     )
 
     session.add(new_conta)
@@ -36,9 +43,7 @@ def create_conta(conta: ContaSchema, session: Session = Depends(get_session)):
 
 
 @router.get('/', response_model=ContaList, status_code=HTTPStatus.OK)
-def get_contas(
-    session: Session = Depends(get_session), filters: FiltersPage = Query()
-):
+def get_contas(session: Session, filters: FiltersPage = Query()):
     contas = session.scalars(
         select(Conta).offset(filters.offset).limit(filters.limit)
     ).all()
@@ -48,7 +53,7 @@ def get_contas(
 @router.get(
     '/{conta_id}', response_model=ContaResponse, status_code=HTTPStatus.OK
 )
-def get_conta(conta_id: int, session: Session = Depends(get_session)):
+def get_conta(conta_id: int, session: Session):
     conta = session.scalar(select(Conta).where(Conta.id == conta_id))
 
     if not conta:
@@ -64,25 +69,25 @@ def get_conta(conta_id: int, session: Session = Depends(get_session)):
     '/{conta_id}', response_model=ContaResponse, status_code=HTTPStatus.OK
 )
 def update_conta(
-    conta_id: int, conta: ContaSchema, session: Session = Depends(get_session)
+    conta_id: int,
+    conta: ContaSchema,
+    session: Session,
+    current_conta: CurrentConta,
 ):
-    db_conta = session.scalar(select(Conta).where(Conta.id == conta_id))
-
-    if not db_conta:
+    if current_conta.id != conta_id:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
-            detail='Conta não encontrada',
+            status_code=HTTPStatus.FORBIDDEN, detail='Permissões insuficientes'
         )
 
     try:
-        db_conta.username = conta.username
-        db_conta.email = conta.email
-        db_conta.senha = conta.senha
+        current_conta.username = conta.username
+        current_conta.email = conta.email
+        current_conta.senha = get_password_hash(conta.senha)
 
         session.commit()
-        session.refresh(db_conta)
+        session.refresh(current_conta)
 
-        return db_conta
+        return current_conta
     except IntegrityError:
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT,
@@ -91,14 +96,11 @@ def update_conta(
 
 
 @router.delete('/{conta_id}', status_code=HTTPStatus.NO_CONTENT)
-def delete_conta(conta_id: int, session: Session = Depends(get_session)):
-    db_conta = session.scalar(select(Conta).where(Conta.id == conta_id))
-
-    if not db_conta:
+def delete_conta(conta_id: int, session: Session, current_conta: CurrentConta):
+    if current_conta.id != conta_id:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
-            detail='Conta não encontrada',
+            status_code=HTTPStatus.FORBIDDEN, detail='Permissões insuficientes'
         )
 
-    session.delete(db_conta)
+    session.delete(current_conta)
     session.commit()

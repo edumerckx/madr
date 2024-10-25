@@ -73,7 +73,7 @@ def test_get_conta_not_found(client):
     assert resp.json() == {'detail': 'Conta não encontrada'}
 
 
-def test_update_conta(client, conta):
+def test_update_conta(client, conta, token):
     data = {
         'username': 'update_test',
         'email': 'update@test.com',
@@ -89,42 +89,56 @@ def test_update_conta(client, conta):
     resp = client.put(
         f'/contas/{conta.id}',
         json=data,
+        headers={'Authorization': f'Bearer {token}'},
     )
 
     assert resp.status_code == HTTPStatus.OK
     assert resp.json() == expected
 
 
-def test_update_conta_not_found(client):
+def test_update_conta_forbidden(client, token):
     data = {'username': 'test', 'email': 'test@test.com', 'senha': 'test'}
 
     resp = client.put(
-        '/contas/999',
-        json=data,
+        '/contas/999', json=data, headers={'Authorization': f'Bearer {token}'}
     )
 
-    assert resp.status_code == HTTPStatus.NOT_FOUND
-    assert resp.json() == {'detail': 'Conta não encontrada'}
+    assert resp.status_code == HTTPStatus.FORBIDDEN
+    assert resp.json() == {'detail': 'Permissões insuficientes'}
 
 
-def test_update_conta_conflict(client, conta, outra_conta):
-    data = {'username': conta.username, 'email': conta.email, 'senha': 'test'}
+def test_update_conta_conflict(client, conta, outra_conta, token):
+    data = {
+        'username': outra_conta.username,
+        'email': outra_conta.email,
+        'senha': 'test',
+    }
 
-    resp = client.put(f'/contas/{outra_conta.id}', json=data)
+    resp = client.put(
+        f'/contas/{conta.id}',
+        json=data,
+        headers={'Authorization': f'Bearer {token}'},
+    )
 
     assert resp.status_code == HTTPStatus.CONFLICT
     assert resp.json() == {'detail': 'Username e/ou email já registrados'}
 
 
-def test_delete_conta(client, conta):
-    resp = client.delete(f'/contas/{conta.id}')
+def test_delete_conta(client, conta, token):
+    resp = client.delete(
+        f'/contas/{conta.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
 
     assert resp.status_code == HTTPStatus.NO_CONTENT
     assert resp.content == b''
 
 
-def test_delete_conta_not_fount(client):
-    resp = client.delete('/contas/999')
+def test_delete_conta_forbidden(client, token):
+    resp = client.delete(
+        '/contas/999',
+        headers={'Authorization': f'Bearer {token}'},
+    )
 
-    assert resp.status_code == HTTPStatus.NOT_FOUND
-    assert resp.json() == {'detail': 'Conta não encontrada'}
+    assert resp.status_code == HTTPStatus.FORBIDDEN
+    assert resp.json() == {'detail': 'Permissões insuficientes'}

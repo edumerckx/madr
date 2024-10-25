@@ -81,3 +81,12 @@ def outra_conta(session):
     conta.senha_texto = senha
 
     return conta
+
+
+@pytest.fixture
+def token(client, conta):
+    resp = client.post(
+        '/auth/token',
+        data={'username': conta.username, 'password': conta.senha_texto},
+    )
+    return resp.json()['access_token']

@@ -1,6 +1,10 @@
 from jwt import decode
 
-from madr.security import create_token, get_password_hash, verify_password
+from madr.security import (
+    create_token,
+    get_password_hash,
+    verify_password,
+)
 from madr.settings import Settings
 
 settings = Settings()

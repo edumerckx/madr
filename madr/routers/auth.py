@@ -33,6 +33,6 @@ def login_for_access_token(form_data: OAuth2Form, session: Session):
     if not verify_password(form_data.password, conta.senha):
         raise bad_request
 
-    access_token = create_token(data={'sub': conta.email})
+    access_token = create_token(data={'sub': conta.username})
 
     return {'access_token': access_token, 'token_type': 'bearer'}
