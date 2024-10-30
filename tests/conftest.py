@@ -87,6 +87,6 @@ def outra_conta(session):
 def token(client, conta):
     resp = client.post(
         '/auth/token',
-        data={'username': conta.username, 'password': conta.senha_texto},
+        data={'username': conta.email, 'password': conta.senha_texto},
     )
     return resp.json()['access_token']

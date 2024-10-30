@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 
 def test_create_token(client, conta):
-    data = {'username': conta.username, 'password': conta.senha_texto}
+    data = {'username': conta.email, 'password': conta.senha_texto}
 
     resp = client.post('/auth/token', data=data)
     token = resp.json()
@@ -15,7 +15,7 @@ def test_create_token(client, conta):
 
 def test_create_token_wrong_password(client, conta):
     data = {
-        'username': conta.username,
+        'username': conta.email,
         'password': f'{conta.senha_texto}errada',
     }
 
@@ -26,7 +26,7 @@ def test_create_token_wrong_password(client, conta):
 
 
 def test_create_token_non_existent(client):
-    data = {'username': 'test', 'password': 'test'}
+    data = {'username': 'test@test.com', 'password': 'test'}
 
     resp = client.post('/auth/token', data=data)
 

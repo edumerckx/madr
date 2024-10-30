@@ -61,7 +61,7 @@ def get_current_conta(session: Session, token: OAuth2Scheme):
         raise credentials_exception
 
     conta = session.scalar(
-        select(Conta).where(Conta.username == token_data.username)
+        select(Conta).where(Conta.email == token_data.username)
     )
     if not conta:
         raise credentials_exception
