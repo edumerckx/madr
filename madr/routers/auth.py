@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session as SessionORM
 from madr.db import get_session
 from madr.models import Conta
 from madr.schemas.auth import Token
-from madr.security import create_token, verify_password
+from madr.security import create_token, get_current_conta, verify_password
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 
@@ -35,4 +35,12 @@ def login_for_access_token(form_data: OAuth2Form, session: Session):
 
     access_token = create_token(data={'sub': conta.email})
 
+    return {'access_token': access_token, 'token_type': 'bearer'}
+
+
+@router.post(
+    '/refresh-token', response_model=Token, status_code=HTTPStatus.CREATED
+)
+def refresh_token(conta: Conta = Depends(get_current_conta)):
+    access_token = create_token(data={'sub': conta.email})
     return {'access_token': access_token, 'token_type': 'bearer'}
