@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 
 from madr.app import app
 from madr.db import get_session
-from madr.models import Conta, table_registry
+from madr.models import Conta, Romancista, table_registry
 from madr.security import get_password_hash
 
 
@@ -57,6 +57,13 @@ class ContaFactory(factory.Factory):
     senha = factory.LazyAttribute(lambda obj: f'{obj.username}pass')
 
 
+class RomancistaFactory(factory.Factory):
+    class Meta:
+        model = Romancista
+
+    nome = factory.Sequence(lambda n: f'test {n}')
+
+
 @pytest.fixture
 def conta(session):
     senha = 'test'
@@ -81,6 +88,26 @@ def outra_conta(session):
     conta.senha_texto = senha
 
     return conta
+
+
+@pytest.fixture
+def romancista(session):
+    romancista = RomancistaFactory()
+    session.add(romancista)
+    session.commit()
+    session.refresh(romancista)
+
+    return romancista
+
+
+@pytest.fixture
+def outro_romancista(session):
+    romancista = RomancistaFactory()
+    session.add(romancista)
+    session.commit()
+    session.refresh(romancista)
+
+    return romancista
 
 
 @pytest.fixture
