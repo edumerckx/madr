@@ -47,35 +47,35 @@ def get_livro(livro_id: int, session: Session, conta: CurrentConta):
 def update_livro(
     livro_id: int, livro: LivroSchema, session: Session, conta: CurrentConta
 ):
-    livro = session.scalar(select(Livro).where(Livro.id == livro_id))
+    db_livro = session.scalar(select(Livro).where(Livro.id == livro_id))
 
-    if not livro:
+    if not db_livro:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
             detail='Livro nao encontrado',
         )
 
-    livro.titulo = livro.titulo
-    livro.ano = livro.ano
-    livro.romancista_id = livro.romancista_id
+    db_livro.titulo = livro.titulo
+    db_livro.ano = livro.ano
+    db_livro.romancista_id = livro.romancista_id
 
     session.commit()
-    session.refresh(livro)
+    session.refresh(db_livro)
 
-    return livro
+    return db_livro
 
 
 @router.delete('/{livro_id}', status_code=HTTPStatus.NO_CONTENT)
 def delete_livro(livro_id: int, session: Session, conta: CurrentConta):
-    livro = session.scalar(select(Livro).where(Livro.id == livro_id))
+    db_livro = session.scalar(select(Livro).where(Livro.id == livro_id))
 
-    if not livro:
+    if not db_livro:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
             detail='Livro nao encontrado',
         )
 
-    session.delete(livro)
+    session.delete(db_livro)
     session.commit()
 
 
