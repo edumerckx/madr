@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import func
-from sqlalchemy.orm import Mapped, mapped_column, registry
+from sqlalchemy import ForeignKey, func
+from sqlalchemy.orm import Mapped, mapped_column, registry, relationship
 
 table_registry = registry()
 
@@ -33,4 +33,28 @@ class Romancista:
     )
     updated_at: Mapped[datetime] = mapped_column(
         init=False, onupdate=func.now(), server_default=func.now()
+    )
+    livros: Mapped[list['Livro']] = relationship(
+        back_populates='romancista',
+        init=False,
+        cascade='all, delete-orphan',
+    )
+
+
+@table_registry.mapped_as_dataclass
+class Livro:
+    __tablename__ = 'livros'
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    ano: Mapped[int]
+    titulo: Mapped[str]
+    romancista_id: Mapped[int] = mapped_column(ForeignKey('romancistas.id'))
+    created_at: Mapped[datetime] = mapped_column(
+        init=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        init=False, onupdate=func.now(), server_default=func.now()
+    )
+    romancista: Mapped['Romancista'] = relationship(
+        back_populates='livros', init=False
     )
