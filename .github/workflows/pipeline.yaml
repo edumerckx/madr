@@ -1,0 +1,30 @@
+name: Pipeline MADR
+
+on: [push]
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        env: 
+            DATABASE_URL: ${{secrets.DATABASE_URL}}
+            ACCESS_TOKEN_EXPIRE_MINUTES: ${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}
+            SECRET_KEY: ${{secrets.SECRET_KEY}}
+            ALGORITHM: ${{secrets.ALGORITHM}}
+        steps:
+            - name: copia arquivos
+              uses: actions/checkout@v3
+
+            - name: instalar python
+              uses: actions/setup-python@v5
+              with:
+                python-version: '3.12'
+            
+            - name: instalar poetry
+              run: pip install poetry
+
+            - name: instalar dependências
+              run: poetry install --no-root
+
+            - name: executar testes
+              run: poetry run task test
+
