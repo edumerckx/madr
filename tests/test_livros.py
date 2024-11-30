@@ -38,9 +38,10 @@ def test_list_livros_should_return_2_livros(client, token, session, romancista):
     )
 
     data = resp.json()['livros']
+    expected_length = 2
 
     assert resp.status_code == HTTPStatus.OK
-    assert len(data) == 2
+    assert len(data) == expected_length
 
 
 def test_get_livro(client, livro, token):
